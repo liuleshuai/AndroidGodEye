@@ -37,35 +37,46 @@ public class PageDrawMonitor {
     }
 
     public void listen() {
-        ViewTreeObserver.OnDrawListener onDrawListener = () -> isDraw = true;
+        ViewTreeObserver.OnDrawListener onDrawListener = new ViewTreeObserver.OnDrawListener() {
+            @Override
+            public void onDraw() {
+                isDraw = true;
+            }
+        };
         view.getViewTreeObserver().addOnDrawListener(onDrawListener);
         runOnDrawEnd(view, onDrawListener, 3, onDrawCallback);
     }
 
-    private void runOnDrawEnd(View view, ViewTreeObserver.OnDrawListener onDrawListener, int maxPostTimes, @NonNull ViewUtil.OnDrawCallback onDrawCallback) {
+    private void runOnDrawEnd(final View view, final ViewTreeObserver.OnDrawListener onDrawListener, int maxPostTimes, @NonNull final ViewUtil.OnDrawCallback onDrawCallback) {
         if (view == null || onDrawListener == null) {
             return;
         }
         maxPostTimes --;
-        int finalMaxPostTimes = maxPostTimes;
-        postTraversalFinishCallBack(() -> {
-            if (!isDraw && finalMaxPostTimes > 0) {
-                runOnDrawEnd(view, onDrawListener, finalMaxPostTimes, onDrawCallback);
-            } else {
-                view.getViewTreeObserver().removeOnDrawListener(onDrawListener);
-                onDrawCallback.didDraw();
+        final int finalMaxPostTimes = maxPostTimes;
+        postTraversalFinishCallBack(new OnTraversalFinishListener() {
+            @Override
+            public void onFinish() {
+                if (!isDraw && finalMaxPostTimes > 0) {
+                    PageDrawMonitor.this.runOnDrawEnd(view, onDrawListener, finalMaxPostTimes, onDrawCallback);
+                } else {
+                    view.getViewTreeObserver().removeOnDrawListener(onDrawListener);
+                    onDrawCallback.didDraw();
+                }
             }
         });
     }
 
-    private void postTraversalFinishCallBack(OnTraversalFinishListener onTraversalFinishListener) {
+    private void postTraversalFinishCallBack(final OnTraversalFinishListener onTraversalFinishListener) {
         if (choreographerMethod == null) {
             return;
         }
         try {
-            choreographerMethod.invoke(ChoreographerInjecor.getChoreographerProvider().getChoreographer(), CALLBACK_COMMIT, (Runnable) () -> {
-                if (onTraversalFinishListener != null) {
-                    onTraversalFinishListener.onFinish();
+            choreographerMethod.invoke(ChoreographerInjecor.getChoreographerProvider().getChoreographer(), CALLBACK_COMMIT, new Runnable() {
+                @Override
+                public void run() {
+                    if (onTraversalFinishListener != null) {
+                        onTraversalFinishListener.onFinish();
+                    }
                 }
             }, FRAME_CALLBACK_TOKEN);
         } catch (Throwable throwable) {

@@ -10,6 +10,7 @@ import cn.hikyson.godeye.core.internal.Install;
 import cn.hikyson.godeye.core.internal.ProduceableSubject;
 import cn.hikyson.godeye.core.utils.JsonUtil;
 import cn.hikyson.godeye.core.utils.L;
+import cn.hikyson.methodcanary.lib.MethodCanaryOnGetRecordsCallback;
 import cn.hikyson.methodcanary.lib.MethodEvent;
 import cn.hikyson.methodcanary.lib.ThreadInfo;
 import io.reactivex.subjects.BehaviorSubject;
@@ -74,15 +75,18 @@ public class MethodCanary extends ProduceableSubject<MethodsRecordInfo> implemen
                 return;
             }
             cn.hikyson.methodcanary.lib.MethodCanary.get().stopMethodTracing(tag
-                    , new cn.hikyson.methodcanary.lib.MethodCanaryConfig(this.mMethodCanaryContext.lowCostMethodThresholdMillis()), (sessionTag, startMillis, stopMillis, methodEventMap) -> {
-                        long start0 = System.currentTimeMillis();
-                        MethodsRecordInfo methodsRecordInfo = MethodCanaryConverter.convertToMethodsRecordInfo(startMillis, stopMillis, methodEventMap);
-//                        recordToFile(methodEventMap, methodsRecordInfo);
-                        long start1 = System.currentTimeMillis();
-                        MethodCanaryConverter.filter(methodsRecordInfo, this.mMethodCanaryContext);
-                        long end = System.currentTimeMillis();
-                        L.d(String.format("MethodCanary output success! cost %s ms, filter cost %s ms", end - start0, end - start1));
-                        produce(methodsRecordInfo);
+                    , new cn.hikyson.methodcanary.lib.MethodCanaryConfig(this.mMethodCanaryContext.lowCostMethodThresholdMillis()), new MethodCanaryOnGetRecordsCallback() {
+                        @Override
+                        public void onGetRecords(String sessionTag, long startMillis, long stopMillis, Map<ThreadInfo, List<MethodEvent>> methodEventMap) {
+                            long start0 = System.currentTimeMillis();
+                            MethodsRecordInfo methodsRecordInfo = MethodCanaryConverter.convertToMethodsRecordInfo(startMillis, stopMillis, methodEventMap);
+                            //                        recordToFile(methodEventMap, methodsRecordInfo);
+                            long start1 = System.currentTimeMillis();
+                            MethodCanaryConverter.filter(methodsRecordInfo, MethodCanary.this.mMethodCanaryContext);
+                            long end = System.currentTimeMillis();
+                            L.d(String.format("MethodCanary output success! cost %s ms, filter cost %s ms", end - start0, end - start1));
+                            MethodCanary.this.produce(methodsRecordInfo);
+                        }
                     });
             L.d("MethodCanary stopped monitor and output processing...");
         } catch (Exception e) {

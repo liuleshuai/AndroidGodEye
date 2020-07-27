@@ -27,7 +27,12 @@ public class Crash extends ProduceableSubject<List<CrashInfo>> implements Instal
             L.d("Crash already installed, ignore.");
             return true;
         }
-        Consumer<List<CrashInfo>> consumer = this::produce;
+        Consumer<List<CrashInfo>> consumer = new Consumer<List<CrashInfo>>() {
+            @Override
+            public void accept(List<CrashInfo> info) {
+                produce(info);
+            }
+        };
         // auto detect crash collector provider
         try {
             ReflectUtil.invokeStaticMethodUnSafe("cn.hikyson.android.godeye.xcrash.GodEyePluginXCrash", "init",

@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -27,21 +28,30 @@ import cn.hikyson.godeye.core.utils.IoUtil;
 import cn.hikyson.godeye.core.utils.JsonUtil;
 import cn.hikyson.godeye.core.utils.L;
 import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.functions.Consumer;
 
 
 public class CrashStore {
-    public static Observable<List<CrashInfo>> observeCrashAndCache(Context context, String storeDirName) {
-        return Observable.create(emitter -> {
-            try {
-                GodEye.instance().observeModule(GodEye.ModuleName.CRASH, (List<CrashInfo> maps) -> {
-                    if (!maps.isEmpty()) {
-                        storeCrash(context, maps, storeDirName);
-                    }
-                    emitter.onNext(restoreCrash(context, storeDirName));
-                    emitter.onComplete();
-                });
-            } catch (UninstallException e) {
-                L.d(GodEye.ModuleName.CRASH + " is not installed.");
+    public static Observable<List<CrashInfo>> observeCrashAndCache(final Context context, final String storeDirName) {
+        return Observable.create(new ObservableOnSubscribe<List<CrashInfo>>() {
+            @Override
+            public void subscribe(final ObservableEmitter<List<CrashInfo>> emitter) throws Exception {
+                try {
+                    GodEye.instance().observeModule(GodEye.ModuleName.CRASH, new Consumer<List<CrashInfo>>() {
+                        @Override
+                        public void accept(List<CrashInfo> maps) throws Exception {
+                            if (!maps.isEmpty()) {
+                                storeCrash(context, maps, storeDirName);
+                            }
+                            emitter.onNext(restoreCrash(context, storeDirName));
+                            emitter.onComplete();
+                        }
+                    });
+                } catch (UninstallException e) {
+                    L.d(GodEye.ModuleName.CRASH + " is not installed.");
+                }
             }
         });
     }
@@ -50,7 +60,12 @@ public class CrashStore {
     private static final SimpleDateFormat FORMATTER_2 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
     private static final int sMaxStoreCount = 10;
     private static final String SUFFIX = ".crash";
-    private static final FilenameFilter mCrashFilenameFilter = (dir, filename) -> filename.endsWith(SUFFIX);
+    private static final FilenameFilter mCrashFilenameFilter = new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String filename) {
+            return filename.endsWith(SUFFIX);
+        }
+    };
 
     private static synchronized void storeCrash(Context context, List<CrashInfo> crashInfos, String storeDirName) {
         List<File> crashFiles = null;
@@ -60,11 +75,14 @@ public class CrashStore {
             L.e(e);
         }
         if (crashFiles != null && crashFiles.size() >= sMaxStoreCount) {
-            Collections.sort(crashFiles, (o1, o2) -> {
-                try {
-                    return Long.compare(Objects.requireNonNull(FORMATTER.parse(o2.getName())).getTime(), FORMATTER.parse(o1.getName()).getTime());
-                } catch (Throwable e) {
-                    return Long.compare(o2.lastModified(), o1.lastModified());
+            Collections.sort(crashFiles, new Comparator<File>() {
+                @Override
+                public int compare(File o1, File o2) {
+                    try {
+                        return Long.compare(Objects.requireNonNull(FORMATTER.parse(o2.getName())).getTime(), FORMATTER.parse(o1.getName()).getTime());
+                    } catch (Throwable e) {
+                        return Long.compare(o2.lastModified(), o1.lastModified());
+                    }
                 }
             });
             for (int i = 0; i < (crashFiles.size() + 1 - sMaxStoreCount); i++) {
@@ -127,13 +145,16 @@ public class CrashStore {
             }
         }
         // sort by crash time [2019-09-04 12:00:00.crash,2019-09-02 12:00:00.crash,2019-09-02 11:00:00.crash]
-        Collections.sort(crashInfos, (o1, o2) -> {
-            try {
-                return Long.compare(Objects.requireNonNull(FORMATTER_2.parse(o2.crashTime)).getTime(), FORMATTER_2.parse(o1.crashTime).getTime());
-            } catch (Throwable throwable) {
-                L.e(throwable);
+        Collections.sort(crashInfos, new Comparator<CrashInfo>() {
+            @Override
+            public int compare(CrashInfo o1, CrashInfo o2) {
+                try {
+                    return Long.compare(Objects.requireNonNull(FORMATTER_2.parse(o2.crashTime)).getTime(), FORMATTER_2.parse(o1.crashTime).getTime());
+                } catch (Throwable throwable) {
+                    L.e(throwable);
+                }
+                return 0;
             }
-            return 0;
         });
         L.d("CrashStore restoreCrash count:%s", crashInfos.size());
         return crashInfos;

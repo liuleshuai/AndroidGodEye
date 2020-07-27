@@ -154,38 +154,56 @@ public class ModuleDriver {
     }
 
     private Function<PageLifecycleEventInfo, PageLifecycleProcessedEvent> pageLifecycleMap() {
-        return tPageLifecycleEventInfo -> {
-            PageLifecycleProcessedEvent pageLifecycleProcessedEvent = new PageLifecycleProcessedEvent();
-            pageLifecycleProcessedEvent.pageType = tPageLifecycleEventInfo.pageInfo.pageType;
-            pageLifecycleProcessedEvent.pageHashCode = tPageLifecycleEventInfo.pageInfo.pageHashCode;
-            pageLifecycleProcessedEvent.pageClassName = tPageLifecycleEventInfo.pageInfo.pageClassName;
-            pageLifecycleProcessedEvent.lifecycleEvent = tPageLifecycleEventInfo.currentEvent.lifecycleEvent;
-            pageLifecycleProcessedEvent.startTimeMillis = tPageLifecycleEventInfo.currentEvent.startTimeMillis;
-            pageLifecycleProcessedEvent.endTimeMillis = tPageLifecycleEventInfo.currentEvent.endTimeMillis;
-            pageLifecycleProcessedEvent.processedInfo = new HashMap<>();
-            if ((pageLifecycleProcessedEvent.lifecycleEvent == ActivityLifecycleEvent.ON_DRAW
-                    || pageLifecycleProcessedEvent.lifecycleEvent == FragmentLifecycleEvent.ON_DRAW)) {
-                long drawTime = PageloadUtil.parsePageDrawTimeMillis(tPageLifecycleEventInfo.allEvents);
-                pageLifecycleProcessedEvent.processedInfo.put("drawTime", drawTime);
+        return new Function<PageLifecycleEventInfo, PageLifecycleProcessedEvent>() {
+            @Override
+            public PageLifecycleProcessedEvent apply(PageLifecycleEventInfo tPageLifecycleEventInfo) throws Exception {
+                PageLifecycleProcessedEvent pageLifecycleProcessedEvent = new PageLifecycleProcessedEvent();
+                pageLifecycleProcessedEvent.pageType = tPageLifecycleEventInfo.pageInfo.pageType;
+                pageLifecycleProcessedEvent.pageHashCode = tPageLifecycleEventInfo.pageInfo.pageHashCode;
+                pageLifecycleProcessedEvent.pageClassName = tPageLifecycleEventInfo.pageInfo.pageClassName;
+                pageLifecycleProcessedEvent.lifecycleEvent = tPageLifecycleEventInfo.currentEvent.lifecycleEvent;
+                pageLifecycleProcessedEvent.startTimeMillis = tPageLifecycleEventInfo.currentEvent.startTimeMillis;
+                pageLifecycleProcessedEvent.endTimeMillis = tPageLifecycleEventInfo.currentEvent.endTimeMillis;
+                pageLifecycleProcessedEvent.processedInfo = new HashMap<>();
+                if ((pageLifecycleProcessedEvent.lifecycleEvent == ActivityLifecycleEvent.ON_DRAW
+                        || pageLifecycleProcessedEvent.lifecycleEvent == FragmentLifecycleEvent.ON_DRAW)) {
+                    long drawTime = PageloadUtil.parsePageDrawTimeMillis(tPageLifecycleEventInfo.allEvents);
+                    pageLifecycleProcessedEvent.processedInfo.put("drawTime", drawTime);
+                }
+                if ((pageLifecycleProcessedEvent.lifecycleEvent == ActivityLifecycleEvent.ON_LOAD
+                        || pageLifecycleProcessedEvent.lifecycleEvent == FragmentLifecycleEvent.ON_LOAD)) {
+                    long loadTime = PageloadUtil.parsePageloadTimeMillis(tPageLifecycleEventInfo.allEvents);
+                    pageLifecycleProcessedEvent.processedInfo.put("loadTime", loadTime);
+                }
+                return pageLifecycleProcessedEvent;
             }
-            if ((pageLifecycleProcessedEvent.lifecycleEvent == ActivityLifecycleEvent.ON_LOAD
-                    || pageLifecycleProcessedEvent.lifecycleEvent == FragmentLifecycleEvent.ON_LOAD)) {
-                long loadTime = PageloadUtil.parsePageloadTimeMillis(tPageLifecycleEventInfo.allEvents);
-                pageLifecycleProcessedEvent.processedInfo.put("loadTime", loadTime);
-            }
-            return pageLifecycleProcessedEvent;
         };
     }
 
     private Predicate<List<CrashInfo>> crashPredicate() {
-        return crashInfos -> crashInfos != null && !crashInfos.isEmpty();
+        return new Predicate<List<CrashInfo>>() {
+            @Override
+            public boolean test(List<CrashInfo> crashInfos) throws Exception {
+                return crashInfos != null && !crashInfos.isEmpty();
+            }
+        };
     }
 
     private Function<BlockInfo, BlockSimpleInfo> blockMap() {
-        return BlockSimpleInfo::new;
+        return new Function<BlockInfo, BlockSimpleInfo>() {
+            @Override
+            public BlockSimpleInfo apply(BlockInfo blockInfo) throws Exception {
+                return new BlockSimpleInfo(blockInfo);
+            }
+        };
     }
 
     private Function<NetworkInfo, NetworkSummaryInfo> networkMap() {
-        return NetworkSummaryInfo::convert;
+        return new Function<NetworkInfo, NetworkSummaryInfo>() {
+            @Override
+            public NetworkSummaryInfo apply(NetworkInfo networkInfo) throws Exception {
+                return NetworkSummaryInfo.convert(networkInfo);
+            }
+        };
     }
 }

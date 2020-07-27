@@ -47,8 +47,8 @@ class OkHttpNetworkContentInterceptor implements Interceptor {
             httpContent.httpRequest.payload = "(No request body)";
         } else if (bodyHasUnknownEncoding(request.headers())) {
             httpContent.httpRequest.payload = "(Unknown encoding request body)";
-        } else if (requestBody.isDuplex()) {
-            httpContent.httpRequest.payload = "(duplex request body, Maybe HTTP2)";
+            //        } else if (requestBody.isDuplex()) {
+            //            httpContent.httpRequest.payload = "(duplex request body, Maybe HTTP2)";
         } else {
             Buffer buffer = new Buffer();
             requestBody.writeTo(buffer);
@@ -85,7 +85,7 @@ class OkHttpNetworkContentInterceptor implements Interceptor {
         } else {
             BufferedSource source = responseBody.source();
             source.request(Long.MAX_VALUE); // Buffer the entire body.
-            Buffer buffer = source.getBuffer();
+            Buffer buffer = source.buffer();
             Long gzippedLength = null;
             if ("gzip".equalsIgnoreCase(responseHeaders.get("Content-Encoding"))) {
                 gzippedLength = buffer.size();

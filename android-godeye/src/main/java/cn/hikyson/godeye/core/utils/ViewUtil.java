@@ -52,8 +52,16 @@ public class ViewUtil {
      * @param parent
      */
     public static List<View> getChildren(ViewGroup parent) {
-        ViewFilter viewFilter = view -> false;
-        ViewProcess viewProcess = view -> {
+        ViewFilter viewFilter = new ViewFilter() {
+            @Override
+            public boolean isExclude(View view) {
+                return false;
+            }
+        };
+        ViewProcess viewProcess = new ViewProcess() {
+            @Override
+            public void onViewProcess(View view) {
+            }
         };
         return getChildren(parent, viewFilter, viewProcess);
     }

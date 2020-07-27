@@ -40,13 +40,21 @@ public class StartupTracer {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalStateException("call onHomeCreate ui thread!");
         }
-        activity.getWindow().getDecorView().post(() -> new Handler().post(() -> {
-            try {
-                GodEyeHelper.onAppStartEnd(generateStartupInfo(System.currentTimeMillis()));
-            } catch (UninstallException e) {
-                e.printStackTrace();
+        activity.getWindow().getDecorView().post(new Runnable() {
+            @Override
+            public void run() {
+                new Handler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            GodEyeHelper.onAppStartEnd(StartupTracer.this.generateStartupInfo(System.currentTimeMillis()));
+                        } catch (UninstallException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
             }
-        }));
+        });
     }
 
     private StartupInfo generateStartupInfo(long homeEndTime) {

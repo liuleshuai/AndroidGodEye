@@ -47,45 +47,75 @@ public class ToolsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_tools, container, false);
-        view.findViewById(R.id.fragment_tools_block_bt).setOnClickListener(v -> {
-            block();
-        });
-        view.findViewById(R.id.fragment_tools_request_bt).setOnClickListener(v -> {
-            request();
-        });
-        view.findViewById(R.id.fragment_tools_leak_activity_bt).setOnClickListener(v -> {
-            leakActivity();
-        });
-        view.findViewById(R.id.fragment_tools_leak_fragment_bt).setOnClickListener(v -> {
-            leakFragment();
-        });
-        view.findViewById(R.id.fragment_tools_call_functions_bt).setOnClickListener(v -> {
-            makeInvocations();
-        });
-        view.findViewById(R.id.fragment_tools_java_crash_bt).setOnClickListener(v -> {
-            SharedPreferences sharedPreferences = Objects.requireNonNull(getActivity()).getSharedPreferences("AndroidGodEye", Context.MODE_PRIVATE);
-            int index = sharedPreferences.getInt("CrashIndex", 0);
-            sharedPreferences.edit().putInt("CrashIndex", index + 1).commit();
-            throw new IllegalStateException("This is a crash made by AndroidGodEye " + index + ".");
-        });
-        view.findViewById(R.id.fragment_tools_native_crash_bt).setOnClickListener(v -> {
-            ReflectUtil.invokeStaticMethod("xcrash.XCrash", "testNativeCrash",
-                    new Class<?>[]{boolean.class}, new Object[]{false});
-        });
-        view.findViewById(R.id.fragment_tools_pageload_bt).setOnClickListener(v -> {
-            Intent intent = new Intent(ToolsFragment.this.getActivity(), SecondActivity.class);
-            startActivity(intent);
-        });
-        view.findViewById(R.id.fragment_tools_startup_bt).setOnClickListener(v -> {
-            try {
-                GodEyeHelper.onAppStartEnd(new StartupInfo(StartupInfo.StartUpType.COLD, new Random().nextInt(1000) + 1000));
-            } catch (UninstallException e) {
-                e.printStackTrace();
+        view.findViewById(R.id.fragment_tools_block_bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ToolsFragment.this.block();
             }
         });
-        view.findViewById(R.id.fragment_tools_image_bt).setOnClickListener(v -> {
-            Intent intent = new Intent(ToolsFragment.this.getActivity(), ImageActivity.class);
-            startActivity(intent);
+        view.findViewById(R.id.fragment_tools_request_bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ToolsFragment.this.request();
+            }
+        });
+        view.findViewById(R.id.fragment_tools_leak_activity_bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ToolsFragment.this.leakActivity();
+            }
+        });
+        view.findViewById(R.id.fragment_tools_leak_fragment_bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ToolsFragment.this.leakFragment();
+            }
+        });
+        view.findViewById(R.id.fragment_tools_call_functions_bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ToolsFragment.this.makeInvocations();
+            }
+        });
+        view.findViewById(R.id.fragment_tools_java_crash_bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences sharedPreferences = Objects.requireNonNull(ToolsFragment.this.getActivity()).getSharedPreferences("AndroidGodEye", Context.MODE_PRIVATE);
+                int index = sharedPreferences.getInt("CrashIndex", 0);
+                sharedPreferences.edit().putInt("CrashIndex", index + 1).commit();
+                throw new IllegalStateException("This is a crash made by AndroidGodEye " + index + ".");
+            }
+        });
+        view.findViewById(R.id.fragment_tools_native_crash_bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ReflectUtil.invokeStaticMethod("xcrash.XCrash", "testNativeCrash",
+                        new Class<?>[]{boolean.class}, new Object[]{false});
+            }
+        });
+        view.findViewById(R.id.fragment_tools_pageload_bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(ToolsFragment.this.getActivity(), SecondActivity.class);
+                ToolsFragment.this.startActivity(intent);
+            }
+        });
+        view.findViewById(R.id.fragment_tools_startup_bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    GodEyeHelper.onAppStartEnd(new StartupInfo(StartupInfo.StartUpType.COLD, new Random().nextInt(1000) + 1000));
+                } catch (UninstallException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        view.findViewById(R.id.fragment_tools_image_bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(ToolsFragment.this.getActivity(), ImageActivity.class);
+                ToolsFragment.this.startActivity(intent);
+            }
         });
         return view;
     }
@@ -94,10 +124,13 @@ public class ToolsFragment extends Fragment {
         EditText editText = getView().findViewById(R.id.fragment_tools_block_et);
         try {
             final long blockTime = Long.parseLong(String.valueOf(editText.getText()));
-            AndroidSchedulers.mainThread().scheduleDirect(() -> {
-                try {
-                    Thread.sleep(blockTime);
-                } catch (Throwable e) {
+            AndroidSchedulers.mainThread().scheduleDirect(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(blockTime);
+                    } catch (Throwable e) {
+                    }
                 }
             });
         } catch (Throwable e) {
@@ -106,18 +139,21 @@ public class ToolsFragment extends Fragment {
     }
 
     private void request() {
-        new Thread(() -> {
-            try {
-                OkHttpClient client = mZygote;
-                Request request = new Request.Builder()
-                        .url("https://tech.hikyson.cn/")
-                        .build();
-                Response response = client.newCall(request).execute();
-                String body = response.body().string();
-                L.d("ToolsFragment request result:" + response.code());
-            } catch (IOException e) {
-                e.printStackTrace();
-                L.d("ToolsFragment request result:" + e);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    OkHttpClient client = mZygote;
+                    Request request = new Request.Builder()
+                            .url("https://tech.hikyson.cn/")
+                            .build();
+                    Response response = client.newCall(request).execute();
+                    String body = response.body().string();
+                    L.d("ToolsFragment request result:" + response.code());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    L.d("ToolsFragment request result:" + e);
+                }
             }
         }).start();
     }
@@ -135,26 +171,32 @@ public class ToolsFragment extends Fragment {
 
     private void makeInvocations() {
         L.d("ToolsFragment makeInvocations start...");
-        MethodCanaryTest methodCanaryTest = new MethodCanaryTest();
-        new Thread(() -> {
-            for (int i = 0; i < 100; i++) {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        final MethodCanaryTest methodCanaryTest = new MethodCanaryTest();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 100; i++) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
+                L.d("ToolsFragment makeInvocations thread[" + Thread.currentThread().getName() + "] end.");
             }
-            L.d("ToolsFragment makeInvocations thread[" + Thread.currentThread().getName() + "] end.");
         }).start();
-        new Thread(() -> {
-            for (int i = 0; i < 100; i++) {
-                try {
-                    methodCanaryTest.methodA();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 100; i++) {
+                    try {
+                        methodCanaryTest.methodA();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
+                L.d("ToolsFragment makeInvocations thread[" + Thread.currentThread().getName() + "] end.");
             }
-            L.d("ToolsFragment makeInvocations thread[" + Thread.currentThread().getName() + "] end.");
         }).start();
         for (int i = 0; i < 1000; i++) {
             methodCanaryTest.methodC();

@@ -54,6 +54,11 @@ public class BatteryInfoFactory {
     }
 
     public static Function<BatteryInfo, BatterySummaryInfo> converter() {
-        return BatteryInfoFactory::convert;
+        return new Function<BatteryInfo, BatterySummaryInfo>() {
+            @Override
+            public BatterySummaryInfo apply(BatteryInfo batteryInfo) throws Exception {
+                return convert(batteryInfo);
+            }
+        };
     }
 }

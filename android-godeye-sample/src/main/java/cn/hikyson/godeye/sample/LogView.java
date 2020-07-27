@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -35,26 +36,35 @@ public class LogView extends ConstraintLayout implements Loggable {
         mSv = this.findViewById(R.id.view_log_layout_sc);
         mMainHandler = new Handler(Looper.getMainLooper());
         this.findViewById(R.id.view_log_layout_follow).setSelected(this.mIsFollow);
-        this.findViewById(R.id.view_log_layout_follow).setOnClickListener(v -> {
-            v.setSelected(!v.isSelected());
-            follow(v.isSelected());
+        this.findViewById(R.id.view_log_layout_follow).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                v.setSelected(!v.isSelected());
+                LogView.this.follow(v.isSelected());
+            }
         });
-        this.findViewById(R.id.view_log_layout_clear).setOnClickListener(v -> {
-            clear();
+        this.findViewById(R.id.view_log_layout_clear).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LogView.this.clear();
+            }
         });
     }
 
     @Override
     public void log(final String msg) {
-        mMainHandler.post(() -> {
-            mLogTv.append(msg + "\n\n");
-            if (mIsFollow) {
-                postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        mSv.fullScroll(ScrollView.FOCUS_DOWN);
-                    }
-                }, 250);
+        mMainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mLogTv.append(msg + "\n\n");
+                if (mIsFollow) {
+                    LogView.this.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            mSv.fullScroll(ScrollView.FOCUS_DOWN);
+                        }
+                    }, 250);
+                }
             }
         });
     }
@@ -66,7 +76,12 @@ public class LogView extends ConstraintLayout implements Loggable {
     private void follow(boolean follow) {
         mIsFollow = follow;
         if (mIsFollow) {
-            postDelayed(() -> mSv.fullScroll(ScrollView.FOCUS_DOWN), 250);
+            postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mSv.fullScroll(ScrollView.FOCUS_DOWN);
+                }
+            }, 250);
         }
     }
 }

@@ -23,11 +23,14 @@ public class LeakFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        new Thread(() -> {
-            try {
-                Thread.sleep(100000);
-                mTv.setText("Leak");
-            } catch (InterruptedException e) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(100000);
+                    mTv.setText("Leak");
+                } catch (InterruptedException e) {
+                }
             }
         }).start();
     }

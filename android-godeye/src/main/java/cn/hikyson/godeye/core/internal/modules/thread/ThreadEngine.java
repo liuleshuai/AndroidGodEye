@@ -15,6 +15,8 @@ import cn.hikyson.godeye.core.utils.L;
 import cn.hikyson.godeye.core.utils.ThreadUtil;
 import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 
 /**
  * Created by kysonchao on 2017/11/23.
@@ -50,14 +52,20 @@ class ThreadEngine implements Engine {
 
     @Override
     public void work() {
-        mCompositeDisposable.add(Observable.interval(mIntervalMillis, TimeUnit.MILLISECONDS).map(aLong -> {
-            ThreadUtil.ensureWorkThread("ThreadEngine apply");
-            return dump(mThreadFilter, mThreadTagger);
+        mCompositeDisposable.add(Observable.interval(mIntervalMillis, TimeUnit.MILLISECONDS).map(new Function<Long, List<ThreadInfo>>() {
+            @Override
+            public List<ThreadInfo> apply(Long aLong) throws Exception {
+                ThreadUtil.ensureWorkThread("ThreadEngine apply");
+                return dump(mThreadFilter, mThreadTagger);
+            }
         }).subscribeOn(ThreadUtil.computationScheduler())
                 .observeOn(ThreadUtil.computationScheduler())
-                .subscribe(food -> {
-                    ThreadUtil.ensureWorkThread("ThreadEngine accept");
-                    mProducer.produce(food);
+                .subscribe(new Consumer<List<ThreadInfo>>() {
+                    @Override
+                    public void accept(List<ThreadInfo> food) throws Exception {
+                        ThreadUtil.ensureWorkThread("ThreadEngine accept");
+                        mProducer.produce(food);
+                    }
                 }));
     }
 

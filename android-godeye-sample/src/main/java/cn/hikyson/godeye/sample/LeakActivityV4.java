@@ -16,13 +16,16 @@ public class LeakActivityV4 extends FragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_leak_v4);
-        LeakFragmentV4 fragmentV4 = new LeakFragmentV4();
+        final LeakFragmentV4 fragmentV4 = new LeakFragmentV4();
         getSupportFragmentManager().beginTransaction().replace(R.id.frame_layout, fragmentV4).commit();
-        AndroidSchedulers.mainThread().scheduleDirect(() -> {
-            try {
-                getSupportFragmentManager().beginTransaction().remove(fragmentV4).commit();
-            } catch (Exception e) {
-                e.printStackTrace();
+        AndroidSchedulers.mainThread().scheduleDirect(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    LeakActivityV4.this.getSupportFragmentManager().beginTransaction().remove(fragmentV4).commit();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }, 2, TimeUnit.SECONDS);
     }

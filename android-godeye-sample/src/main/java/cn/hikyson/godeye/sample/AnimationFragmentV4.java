@@ -27,7 +27,7 @@ public class AnimationFragmentV4 extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_animation_v4, container, false);
-        View animView = view.findViewById(R.id.fragment_animation_v4_view);
+        final View animView = view.findViewById(R.id.fragment_animation_v4_view);
         view.findViewById(R.id.translationX).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

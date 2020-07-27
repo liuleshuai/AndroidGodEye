@@ -19,33 +19,45 @@ public class SecondActivity extends AppCompatActivity implements InstallFragment
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
-        new Handler().postDelayed(() -> {
-            ((TextView) findViewById(R.id.textView)).setText("I am SecondActivity111!");
-            try {
-                GodEyeHelper.onPageLoaded(SecondActivity.this);
-            } catch (UninstallException e) {
-                e.printStackTrace();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                ((TextView) SecondActivity.this.findViewById(R.id.textView)).setText("I am SecondActivity111!");
+                try {
+                    GodEyeHelper.onPageLoaded(SecondActivity.this);
+                } catch (UninstallException e) {
+                    e.printStackTrace();
+                }
             }
         }, 2000);
 
-        new Handler().postDelayed(() -> {
-            ((TextView) findViewById(R.id.textView)).setText("I am SecondActivity222!");
-            try {
-                GodEyeHelper.onPageLoaded(SecondActivity.this);
-            } catch (UninstallException e) {
-                e.printStackTrace();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                ((TextView) SecondActivity.this.findViewById(R.id.textView)).setText("I am SecondActivity222!");
+                try {
+                    GodEyeHelper.onPageLoaded(SecondActivity.this);
+                } catch (UninstallException e) {
+                    e.printStackTrace();
+                }
             }
         }, 3000);
 
-        FragmentManager fragmentManager = getSupportFragmentManager();
+        final FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().add(R.id.activity_second_container, new InstallFragment(), InstallFragment.class.getSimpleName()).commit();
 
-        new Handler().postDelayed(() -> {
-            fragmentManager.beginTransaction().replace(R.id.activity_second_container, new ConsumeFragment(), ConsumeFragment.class.getSimpleName()).commit();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                fragmentManager.beginTransaction().replace(R.id.activity_second_container, new ConsumeFragment(), ConsumeFragment.class.getSimpleName()).commit();
+            }
         }, 1000);
 
-        new Handler().postDelayed(() -> {
-            fragmentManager.beginTransaction().replace(R.id.activity_second_container, new AnimationFragmentV4(), AnimationFragmentV4.class.getSimpleName()).commit();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                fragmentManager.beginTransaction().replace(R.id.activity_second_container, new AnimationFragmentV4(), AnimationFragmentV4.class.getSimpleName()).commit();
+            }
         }, 2000);
     }
 

@@ -13,6 +13,7 @@ import cn.hikyson.godeye.core.internal.Producer;
 import cn.hikyson.godeye.core.utils.ThreadUtil;
 import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.functions.Consumer;
 
 /**
  * Created by kysonchao on 2017/11/23.
@@ -39,11 +40,14 @@ public class FpsEngine implements Engine {
         mCompositeDisposable.add(Observable.interval(mIntervalMillis, TimeUnit.MILLISECONDS)
                 .observeOn(ThreadUtil.computationScheduler())
                 .subscribeOn(ThreadUtil.computationScheduler())
-                .subscribe(aLong -> {
-                    ThreadUtil.ensureWorkThread("FpsEngine accept");
-                    if (!AndroidDebug.isDebugging()) {// if debugging, then ignore
-                        int fps = mFpsMonitor.exportThenReset();
-                        mProducer.produce(new FpsInfo(fps, mSystemRate));
+                .subscribe(new Consumer<Long>() {
+                    @Override
+                    public void accept(Long aLong) throws Exception {
+                        ThreadUtil.ensureWorkThread("FpsEngine accept");
+                        if (!AndroidDebug.isDebugging()) {// if debugging, then ignore
+                            int fps = mFpsMonitor.exportThenReset();
+                            mProducer.produce(new FpsInfo(fps, mSystemRate));
+                        }
                     }
                 }));
     }

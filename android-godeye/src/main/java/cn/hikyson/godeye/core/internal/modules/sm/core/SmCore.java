@@ -42,28 +42,31 @@ public final class SmCore {
 
             @Override
             public void onBlockEvent(final long blockTimeMillis, final long threadBlockTimeMillis, final boolean longBlock, final long eventStartTimeMilliis, final long eventEndTimeMillis, long longBlockThresholdMillis, long shortBlockThresholdMillis) {
-                ThreadUtil.computationScheduler().scheduleDirect(() -> {
-                    if (AndroidDebug.isDebugging()) {// if debugging, then ignore
-                        return;
-                    }
-                    if (longBlock) {
-                        //如果是长卡顿，那么需要记录很多信息
-                        final boolean cpuBusy = cpuSampler.isCpuBusy(eventStartTimeMilliis, eventEndTimeMillis);
-                        //这里短卡顿基本是dump不到数据的，因为dump延时一般都会比短卡顿时间久
-                        final List<CpuInfo> cpuInfos = cpuSampler.getCpuRateInfo(eventStartTimeMilliis, eventEndTimeMillis);
-                        final Map<Long, List<StackTraceElement>> threadStackEntries = stackSampler.getThreadStackEntries(eventStartTimeMilliis, eventEndTimeMillis);
-                        final MemoryInfo memoryInfo = new MemoryInfo(MemoryUtil.getAppHeapInfo(), MemoryUtil.getAppPssInfo(mContext), MemoryUtil.getRamInfo(mContext));
-                        LongBlockInfo blockBaseinfo = new LongBlockInfo(eventStartTimeMilliis, eventEndTimeMillis, threadBlockTimeMillis,
-                                blockTimeMillis, cpuBusy, cpuInfos, threadStackEntries, memoryInfo);
-                        if (mBlockListener != null) {
-                            mBlockListener.onLongBlock(context, blockBaseinfo);
+                ThreadUtil.computationScheduler().scheduleDirect(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (AndroidDebug.isDebugging()) {// if debugging, then ignore
+                            return;
                         }
-                    } else {
-                        final MemoryInfo memoryInfo = new MemoryInfo(MemoryUtil.getAppHeapInfo(), MemoryUtil.getAppPssInfo(mContext), MemoryUtil.getRamInfo(mContext));
-                        ShortBlockInfo shortBlockInfo = new ShortBlockInfo(eventStartTimeMilliis, eventEndTimeMillis, threadBlockTimeMillis,
-                                blockTimeMillis, memoryInfo);
-                        if (mBlockListener != null) {
-                            mBlockListener.onShortBlock(context, shortBlockInfo);
+                        if (longBlock) {
+                            //如果是长卡顿，那么需要记录很多信息
+                            final boolean cpuBusy = cpuSampler.isCpuBusy(eventStartTimeMilliis, eventEndTimeMillis);
+                            //这里短卡顿基本是dump不到数据的，因为dump延时一般都会比短卡顿时间久
+                            final List<CpuInfo> cpuInfos = cpuSampler.getCpuRateInfo(eventStartTimeMilliis, eventEndTimeMillis);
+                            final Map<Long, List<StackTraceElement>> threadStackEntries = stackSampler.getThreadStackEntries(eventStartTimeMilliis, eventEndTimeMillis);
+                            final MemoryInfo memoryInfo = new MemoryInfo(MemoryUtil.getAppHeapInfo(), MemoryUtil.getAppPssInfo(mContext), MemoryUtil.getRamInfo(mContext));
+                            LongBlockInfo blockBaseinfo = new LongBlockInfo(eventStartTimeMilliis, eventEndTimeMillis, threadBlockTimeMillis,
+                                    blockTimeMillis, cpuBusy, cpuInfos, threadStackEntries, memoryInfo);
+                            if (mBlockListener != null) {
+                                mBlockListener.onLongBlock(context, blockBaseinfo);
+                            }
+                        } else {
+                            final MemoryInfo memoryInfo = new MemoryInfo(MemoryUtil.getAppHeapInfo(), MemoryUtil.getAppPssInfo(mContext), MemoryUtil.getRamInfo(mContext));
+                            ShortBlockInfo shortBlockInfo = new ShortBlockInfo(eventStartTimeMilliis, eventEndTimeMillis, threadBlockTimeMillis,
+                                    blockTimeMillis, memoryInfo);
+                            if (mBlockListener != null) {
+                                mBlockListener.onShortBlock(context, shortBlockInfo);
+                            }
                         }
                     }
                 });

@@ -29,8 +29,11 @@ public class FragmentLifecycleCallbacksV4 extends FragmentManager.FragmentLifecy
     @Override
     public void onFragmentViewCreated(FragmentManager fm, final Fragment f, View v, Bundle savedInstanceState) {
         mActivityLifecycleCallbacks.onFragmentV4LifecycleEvent(f, FragmentLifecycleEvent.ON_VIEW_CREATE, false);
-        ViewUtil.measureFragmentV4DidDraw(f, () -> {
-            mActivityLifecycleCallbacks.onFragmentV4LifecycleEvent(f, FragmentLifecycleEvent.ON_DRAW, false);
+        ViewUtil.measureFragmentV4DidDraw(f, new ViewUtil.OnDrawCallback() {
+            @Override
+            public void didDraw() {
+                mActivityLifecycleCallbacks.onFragmentV4LifecycleEvent(f, FragmentLifecycleEvent.ON_DRAW, false);
+            }
         });
     }
 

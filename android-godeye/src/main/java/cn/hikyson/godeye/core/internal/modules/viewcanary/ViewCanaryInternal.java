@@ -37,12 +37,12 @@ class ViewCanaryInternal {
     private static final double THRESHOLD_LAYOUT_CHANGE = 0.5;
     private static final long INSPECT_DELAY_TIME_MILLIS = 800;
 
-    void start(ViewCanary viewCanary, ViewCanaryConfig config) {
-        Handler handler = ThreadUtil.createIfNotExistHandler(VIEW_CANARY_HANDLER);
+    void start(final ViewCanary viewCanary, final ViewCanaryConfig config) {
+        final Handler handler = ThreadUtil.createIfNotExistHandler(VIEW_CANARY_HANDLER);
         callbacks = new SimpleActivityLifecycleCallbacks() {
 
             private Map<Activity, ViewTreeObserver.OnGlobalLayoutListener> mOnGlobalLayoutListenerMap = new HashMap<>();
-            private Map<Activity, List<List<ViewIdWithSize>>> mRecentLayoutListRecords = new HashMap<>();
+            private Map<Activity, ArrayList<Object>> mRecentLayoutListRecords = new HashMap<Activity, ArrayList<Object>>();
 
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
@@ -60,10 +60,13 @@ class ViewCanaryInternal {
             public void onActivityResumed(Activity activity) {
                 super.onActivityResumed(activity);
                 ViewGroup parent = (ViewGroup) activity.getWindow().getDecorView();
-                Runnable callback = inspectInner(new WeakReference<>(activity), viewCanary, config, mRecentLayoutListRecords);
-                ViewTreeObserver.OnGlobalLayoutListener onGlobalLayoutListener = () -> {
-                    handler.removeCallbacks(callback);
-                    handler.postDelayed(callback, INSPECT_DELAY_TIME_MILLIS);
+                final Runnable callback = inspectInner(new WeakReference<>(activity), viewCanary, config, mRecentLayoutListRecords);
+                ViewTreeObserver.OnGlobalLayoutListener onGlobalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        handler.removeCallbacks(callback);
+                        handler.postDelayed(callback, INSPECT_DELAY_TIME_MILLIS);
+                    }
                 };
                 mOnGlobalLayoutListenerMap.put(activity, onGlobalLayoutListener);
                 parent.getViewTreeObserver().addOnGlobalLayoutListener(onGlobalLayoutListener);
@@ -92,24 +95,27 @@ class ViewCanaryInternal {
     }
 
     @VisibleForTesting
-    Runnable inspectInner(WeakReference<Activity> activity, ViewCanary viewCanary, ViewCanaryConfig config, Map<Activity, List<List<ViewIdWithSize>>> recentLayoutListRecords) {
-        return () -> {
-            try {
-                Activity p = activity.get();
-                if (p != null) {
-                    ViewGroup parent = (ViewGroup) p.getWindow().getDecorView();
-                    inspect(p, parent, viewCanary, config, recentLayoutListRecords);
+    Runnable inspectInner(final WeakReference<Activity> activity, final ViewCanary viewCanary, final ViewCanaryConfig config, final Map<Activity, ArrayList<Object>> recentLayoutListRecords) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Activity p = activity.get();
+                    if (p != null) {
+                        ViewGroup parent = (ViewGroup) p.getWindow().getDecorView();
+                        ViewCanaryInternal.this.inspect(p, parent, viewCanary, config, recentLayoutListRecords);
+                    }
+                } catch (Throwable e) {
+                    L.e(e);
                 }
-            } catch (Throwable e) {
-                L.e(e);
             }
         };
     }
 
-    private void inspect(Activity activity, ViewGroup root, ViewCanary viewCanary, ViewCanaryConfig config, Map<Activity, List<List<ViewIdWithSize>>> recentLayoutListRecords) {
+    private void inspect(Activity activity, ViewGroup root, ViewCanary viewCanary, ViewCanaryConfig config, Map<Activity, ArrayList<Object>> recentLayoutListRecords) {
         long startTime = System.currentTimeMillis();
         // check whether layout is changed or not
-        List<List<ViewIdWithSize>> records = recentLayoutListRecords.get(activity);
+        List<Object> records = recentLayoutListRecords.get(activity);
         if (records == null) {// activity has been destroyed if null
             return;
         }
@@ -159,7 +165,7 @@ class ViewCanaryInternal {
         return layoutEigenvalue;
     }
 
-    private static boolean allNotSimilarByMeasureDistanceLayoutEigenvalueWithRecords(List<List<ViewIdWithSize>> records, List<ViewIdWithSize> layoutEigenvalue) {
+    private static boolean allNotSimilarByMeasureDistanceLayoutEigenvalueWithRecords(List<Object> records, List<ViewIdWithSize> layoutEigenvalue) {
         if (records == null || records.isEmpty()) {
             return true;
         }
@@ -183,8 +189,8 @@ class ViewCanaryInternal {
                 return c.sizeInScreenPercent;
             }
         });
-        for (List<ViewIdWithSize> record : records) {
-            double changePercent = l1.distance(layoutEigenvalue, record);
+        for (Object record : records) {
+            double changePercent = l1.distance(layoutEigenvalue, (List<ViewIdWithSize>) record);
             if (changePercent < THRESHOLD_LAYOUT_CHANGE) {// similar
                 return false;
             }

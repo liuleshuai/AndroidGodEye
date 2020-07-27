@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.Switch;
 
@@ -38,39 +39,59 @@ public class ConsumeFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_consume, container, false);
         mCbGroup = view.findViewById(R.id.fragment_consume_cb_group);
-        view.findViewById(R.id.fragment_consume_start_debug_monitor).setOnClickListener(v -> {
-            GodEyeHelper.setMonitorAppInfoConext(new AppInfoProxyImpl());
-            GodEyeHelper.startMonitor();
+        view.findViewById(R.id.fragment_consume_start_debug_monitor).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                GodEyeHelper.setMonitorAppInfoConext(new AppInfoProxyImpl());
+                GodEyeHelper.startMonitor();
+            }
         });
-        view.findViewById(R.id.fragment_consume_stop_debug_monitor).setOnClickListener(v -> {
-            GodEyeHelper.shutdownMonitor();
+        view.findViewById(R.id.fragment_consume_stop_debug_monitor).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                GodEyeHelper.shutdownMonitor();
+            }
         });
         Switch switchView = view.findViewById(R.id.fragment_consume_select_all);
-        switchView.setOnCheckedChangeListener((buttonView, isChecked) -> toggleAllModule(isChecked));
-        view.findViewById(R.id.fragment_consume_start_log_consumer).setOnClickListener(v -> {
-            if (mCompositeDisposable != null) {
-                mCompositeDisposable.dispose();
+        switchView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                ConsumeFragment.this.toggleAllModule(isChecked);
             }
-            mCompositeDisposable = new CompositeDisposable();
-            Set<String> modules = getModulesSelected();
-            StringBuilder sb = new StringBuilder();
-            for (@GodEye.ModuleName String module : modules) {
-                try {
-                    mCompositeDisposable.add(GodEye.instance().observeModule(module, new LogObserver<>(module, msg -> {
-                        L.d(msg);
-                    })));
-                    sb.append(module).append(", ");
-                } catch (UninstallException e) {
-                    L.e(String.valueOf(e));
-                }
-            }
-            L.d("Current Log Consumers:" + sb);
         });
-        view.findViewById(R.id.fragment_consume_stop_log_consumer).setOnClickListener(v -> {
-            if (mCompositeDisposable != null) {
-                mCompositeDisposable.dispose();
+        view.findViewById(R.id.fragment_consume_start_log_consumer).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mCompositeDisposable != null) {
+                    mCompositeDisposable.dispose();
+                }
+                mCompositeDisposable = new CompositeDisposable();
+                Set<String> modules = ConsumeFragment.this.getModulesSelected();
+                StringBuilder sb = new StringBuilder();
+                for (@GodEye.ModuleName String module : modules) {
+                    try {
+                        mCompositeDisposable.add(GodEye.instance().observeModule(module, new LogObserver<>(module, new Loggable() {
+                            @Override
+                            public void log(String msg) {
+                                L.d(msg);
+                            }
+                        })));
+                        sb.append(module).append(", ");
+                    } catch (UninstallException e) {
+                        L.e(String.valueOf(e));
+                    }
+                }
+                L.d("Current Log Consumers:" + sb);
             }
-            L.d("Current No Log Consumers");
+        });
+        view.findViewById(R.id.fragment_consume_stop_log_consumer).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mCompositeDisposable != null) {
+                    mCompositeDisposable.dispose();
+                }
+                L.d("Current No Log Consumers");
+            }
         });
         return view;
     }

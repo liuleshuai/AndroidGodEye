@@ -33,12 +33,15 @@ public class GodEyePluginXCrash {
      * @param crashContext
      * @param consumer
      */
-    public static void init(CrashConfig crashContext, Consumer<List<CrashInfo>> consumer) {
-        ICrashCallback callback = (logPath, emergency) -> {
-            try {
-                sendThenDeleteCrashLog(logPath, emergency, crashContext, consumer);
-            } catch (IOException e) {
-                L.e(e);
+    public static void init(final CrashConfig crashContext, final Consumer<List<CrashInfo>> consumer) {
+        ICrashCallback callback = new ICrashCallback() {
+            @Override
+            public void onCrash(String logPath, String emergency) throws Exception {
+                try {
+                    sendThenDeleteCrashLog(logPath, emergency, crashContext, consumer);
+                } catch (IOException e) {
+                    L.e(e);
+                }
             }
         };
         XCrash.init(GodEye.instance().getApplication(), new XCrash.InitParameters()
@@ -59,11 +62,14 @@ public class GodEyePluginXCrash {
                 .setPlaceholderCountMax(3)
                 .setPlaceholderSizeKb(512)
                 .setLogFileMaintainDelayMs(1000));
-        Schedulers.computation().scheduleDirect(() -> {
-            try {
-                sendThenDeleteCrashLogs(consumer);
-            } catch (Exception e) {
-                L.e(e);
+        Schedulers.computation().scheduleDirect(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    sendThenDeleteCrashLogs(consumer);
+                } catch (Exception e) {
+                    L.e(e);
+                }
             }
         });
     }

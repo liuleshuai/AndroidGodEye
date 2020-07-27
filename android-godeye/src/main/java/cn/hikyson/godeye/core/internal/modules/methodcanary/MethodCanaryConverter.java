@@ -13,7 +13,7 @@ import cn.hikyson.methodcanary.lib.ThreadInfo;
 class MethodCanaryConverter {
 
     static MethodsRecordInfo convertToMethodsRecordInfo(long startMillis, long stopMillis, Map<ThreadInfo, List<MethodEvent>> methodEventMap) {
-        MethodsRecordInfo methodsRecordInfo = new MethodsRecordInfo(startMillis, stopMillis, new ArrayList<>());
+        MethodsRecordInfo methodsRecordInfo = new MethodsRecordInfo(startMillis, stopMillis, new ArrayList<MethodsRecordInfo.MethodInfoOfThreadInfo>());
         if (methodEventMap == null || methodEventMap.isEmpty()) {
             return methodsRecordInfo;
         }
@@ -90,7 +90,12 @@ class MethodCanaryConverter {
     }
 
     private static Comparator<MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo> methodInfoCostComparator(final long startMillis, final long endMillis) {
-        return (o1, o2) -> Long.compare(computeMethodCost(startMillis, endMillis, o2), computeMethodCost(startMillis, endMillis, o1));
+        return new Comparator<MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo>() {
+            @Override
+            public int compare(MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo o1, MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo o2) {
+                return Long.compare(computeMethodCost(startMillis, endMillis, o2), computeMethodCost(startMillis, endMillis, o1));
+            }
+        };
     }
 
     private static long computeMethodCost(long startMillis, long endMillis, MethodsRecordInfo.MethodInfoOfThreadInfo.MethodInfo methodInfo) {

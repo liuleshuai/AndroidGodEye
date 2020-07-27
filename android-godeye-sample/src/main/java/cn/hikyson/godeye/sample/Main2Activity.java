@@ -24,7 +24,7 @@ public class Main2Activity extends AppCompatActivity implements InstallFragment.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
-        LogView logView = findViewById(R.id.activity_main2_logview);
+        final LogView logView = findViewById(R.id.activity_main2_logview);
         L.setProxy(new L.LogProxy() {
             @Override
             public void d(String msg) {

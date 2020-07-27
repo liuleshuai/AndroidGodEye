@@ -3,6 +3,7 @@ package cn.hikyson.godeye.core.internal.modules.methodcanary;
 import androidx.annotation.Keep;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import cn.hikyson.methodcanary.lib.ThreadInfo;
